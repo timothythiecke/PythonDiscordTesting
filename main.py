@@ -211,14 +211,17 @@ async def heartbeat_handler(websocket, heartbeatqueue):
     
     interval = await heartbeatqueue.get()
     print ('Received interval: ', interval)
-    await asyncio.sleep(interval / 1000)
-    print('Done sleeping, sending heartbeat')
-    last_sequence_number = await heartbeatqueue.get()
-    await websocket.send(""" 
-        {{
-            "op": 1,
-            "d": {0}
-        }} """.format(last_sequence_number))
+    
+    while True:
+        await asyncio.sleep(interval / 1000)
+        print('Done sleeping, sending heartbeat')
+        last_sequence_number = await heartbeatqueue.get()
+        await websocket.send(""" 
+            {{
+                "op": 1,
+                "d": {0}
+            }} """.format(last_sequence_number))
+        print('Heartbeat sent')
 
 async def handler(websocket, queue, heartbeatqueue):
     print('handling')
