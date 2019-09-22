@@ -5,6 +5,7 @@ import asyncio
 import websockets
 import json
 import random
+import logging
 from time import sleep
 
 DISCORD_BASE_URL = "https://discordapp.com/api"
@@ -119,22 +120,26 @@ quotes = [
 
 
 async def consumer(message, queue, heartbeatqueue):
+    """
+    Consumes the message received from the websocket, then evaluates
+    what is in it
+    """
     r = json.loads(message)
     print ('Received from gateway: ', r)
     opcode = r["op"]
     message_type = r["t"]
     sequence_number = r["s"]
-    if opcode == 0: # Dispatch
-        print('dispatch from gateway')
+    if opcode == 0: # Dispatch message from gateway
+        print('Dispatch received from gateway')
         if message_type == 'MESSAGE_CREATE':
-            print ('message created by ', r["d"]["author"]) # TODO: ignore own messages, maybe not needed, as it just scans for bobby b in the content
-            print ('content', r["d"]["content"])
+            print ('Message created by ', r["d"]["author"]) # TODO: ignore own messages, maybe not needed, as it just scans for bobby b in the content
+            print ('Content: ', r["d"]["content"])
+            
+            # Currently, the bot will scan any message for any variation of bobby b (case insensitive)
             if re.search("bobby b", r["d"]["content"], re.IGNORECASE):
-                #await queue.put("BOBBYAWAKENS")
-                print('yes')
-                
                 # Note: this should be moved out of the consumer code, but the message is received on the rest endpoint
                 endpoint = """{0}/channels/{1}/messages""".format(DISCORD_BASE_URL, r["d"]["channel_id"])
+                # As required by the API
                 content = {
                     'content': quotes[random.randint(0, len(quotes) - 1)]
                 }
@@ -142,17 +147,19 @@ async def consumer(message, queue, heartbeatqueue):
                 headers = { 
                     'Authorization': """Bot {0}""".format(sys.argv[1])
                 }
-                print (endpoint, content, headers)
+                #print (endpoint, content, headers)
                 r = requests.post(endpoint, data=content, headers=headers)
-                print(r.text)
+                #print(r.text)
         if message_type == 'READY':
-            print ('bot is logged in')
+            print ('Bot is logged in')
+            # TODO: need to cache the sessionID somewhere, in order to be able to resume
+            # Another asyncio.queue? :^)
 
         await heartbeatqueue.put(sequence_number)
     if opcode == 1: # Heartbeat
-        print('heartbeat')
+        print('Heartbeat')
     if opcode == 9: # Invalid session, either resume or disconnect
-        print ('invalid session')
+        print ('Invalid session!')
     if opcode == 10 : # Hello
         heartbeat_interval = json.loads(message)["d"]["heartbeat_interval"]
         print('Hello received with heartbeat interval', heartbeat_interval)
@@ -170,6 +177,10 @@ async def repeatHeartbeat(websocket, heartBeatInterval):
 
 
 async def producer(queue):
+    """
+    Evaluates what is currently on the main queue and produces a
+    message 
+    """
     message_type = await queue.get()
     print(message_type)
     if message_type == 'HELLO':
@@ -195,27 +206,32 @@ async def producer(queue):
 
 
 async def consumer_handler(websocket, queue, heartbeatqueue):
-    print('consumer handler')
-    '''async for message in websocket:
-        await consumer(message)'''
+    """
+    Waits for a message from the websocket, then forwards this to the consumer
+    """
     while True:
         await consumer(await websocket.recv(), queue, heartbeatqueue)
 
 
 
 async def producer_handler(websocket, queue):
-    print('producer handler')
+    """
+    Waits for a message from the producer, then sends it through the websocket
+    """
     while True:
         message = await producer(queue)
-        print('Got message ', message)
+        print('Produced message: ', message)
         await websocket.send(message)
-        print('Done sending')
+        print('Sent!')
 
 
 
 async def heartbeat_handler(websocket, heartbeatqueue):
-    print('heartbeat_handler')
-    
+    """
+    Sends a heartbeat payload to the gateway based on an interval received
+    from the first message received from it. The first element added to the
+    queue should be that interval, any subsequent elements are sequence numbers
+    """  
     interval = await heartbeatqueue.get()
     print ('Received interval: ', interval)
     
@@ -228,12 +244,16 @@ async def heartbeat_handler(websocket, heartbeatqueue):
                 "op": 1,
                 "d": {0}
             }} """.format(last_sequence_number))
-        print('Heartbeat sent')
+        print('Heartbeat sent!')
 
 
 
 async def handler(websocket, queue, heartbeatqueue):
-    print('handling')
+    """
+    Starts the tasks to consume and produce messages to the Discord gateway, as well
+    as a task for sending heartbeats on an interval based from the first message received
+    from the gateway. This continues until the script is killed
+    """
     consumer_task = asyncio.ensure_future(consumer_handler(websocket, queue, heartbeatqueue))
     producer_task = asyncio.ensure_future(producer_handler(websocket, queue))
     heartbeat_task = asyncio.ensure_future(heartbeat_handler(websocket, heartbeatqueue))
@@ -249,5 +269,7 @@ async def main():
         queue = asyncio.Queue() # Used to let the producer know what kind of message 
         heartbeatqueue = asyncio.Queue() # Used for heartbeat messages, the first element that is added to this queue 
         await handler(websocket, queue, heartbeatqueue)
-    
+
+
+
 asyncio.run(main())
