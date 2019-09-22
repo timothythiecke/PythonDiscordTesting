@@ -171,11 +171,6 @@ async def consumer(message, queue, heartbeatqueue):
 
 
 
-async def repeatHeartbeat(websocket, heartBeatInterval):
-    print (heartBeatInterval)
-
-
-
 async def producer(queue):
     """
     Evaluates what is currently on the main queue and produces a
