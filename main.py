@@ -213,4 +213,5 @@ async def main():
 
 
 
+random.seed()
 asyncio.run(main())
