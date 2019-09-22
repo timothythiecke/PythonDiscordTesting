@@ -194,7 +194,7 @@ async def main():
     assert len(sys.argv) > 1 # Supply the token to the bot as an argument to the script
     async with websockets.connect(GATEWAY_URI) as websocket:
         queue = asyncio.Queue() # Used to let the producer know what kind of message 
-        heartbeatqueue = asyncio.Queue() # Used for heartbeat messages, the first element that is added to this queue 
+        heartbeatqueue = asyncio.LifoQueue() # Used for heartbeat messages, the first element that is added to this queue 
         await handler(websocket, queue, heartbeatqueue)
 
 
