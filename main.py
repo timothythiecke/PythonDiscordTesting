@@ -159,6 +159,8 @@ async def consumer(message, queue, heartbeatqueue):
 
         await heartbeatqueue.put(heartbeat_interval)
         await queue.put("HELLO")
+    if opcode == 11: # ACK
+        print('ACK from server')
 
 
 
