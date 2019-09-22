@@ -6,10 +6,13 @@ import websockets
 import json
 import random
 import logging
-from time import sleep
+
+
 
 DISCORD_BASE_URL = "https://discordapp.com/api"
 GATEWAY_URI = "wss://gateway.discord.gg/?v=6&encoding=json"
+
+
 
 quotes = [
     'THE DOTHRAKI ON AN OPEN FIELD NED',
