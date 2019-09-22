@@ -127,7 +127,7 @@ async def consumer(message, queue, heartbeatqueue):
     if opcode == 0: # Dispatch
         print('dispatch from gateway')
         if message_type == 'MESSAGE_CREATE':
-            print ('message created by ', r["d"]["author"]) # TODO: ignore own messages
+            print ('message created by ', r["d"]["author"]) # TODO: ignore own messages, maybe not needed, as it just scans for bobby b in the content
             print ('content', r["d"]["content"])
             if re.search("bobby b", r["d"]["content"], re.IGNORECASE):
                 #await queue.put("BOBBYAWAKENS")
@@ -147,7 +147,6 @@ async def consumer(message, queue, heartbeatqueue):
                 print(r.text)
         if message_type == 'READY':
             print ('bot is logged in')
-            #await heartbeatqueue.put(r["s"])
 
         await heartbeatqueue.put(sequence_number)
     if opcode == 1: # Heartbeat
@@ -156,16 +155,17 @@ async def consumer(message, queue, heartbeatqueue):
         print ('invalid session')
     if opcode == 10 : # Hello
         heartbeat_interval = json.loads(message)["d"]["heartbeat_interval"]
-        print('Hello received', heartbeat_interval)
-            #return [heartbeat_interval, websocket]
-            # asyncio.ensure_future?
-            #print(message)
+        print('Hello received with heartbeat interval', heartbeat_interval)
 
         await heartbeatqueue.put(heartbeat_interval)
         await queue.put("HELLO")
 
+
+
 async def repeatHeartbeat(websocket, heartBeatInterval):
     print (heartBeatInterval)
+
+
 
 async def producer(queue):
     message_type = await queue.get()
@@ -190,12 +190,15 @@ async def producer(queue):
     else:
         return ''
 
+
+
 async def consumer_handler(websocket, queue, heartbeatqueue):
     print('consumer handler')
     '''async for message in websocket:
         await consumer(message)'''
     while True:
         await consumer(await websocket.recv(), queue, heartbeatqueue)
+
 
 
 async def producer_handler(websocket, queue):
@@ -205,6 +208,8 @@ async def producer_handler(websocket, queue):
         print('Got message ', message)
         await websocket.send(message)
         print('Done sending')
+
+
 
 async def heartbeat_handler(websocket, heartbeatqueue):
     print('heartbeat_handler')
@@ -223,6 +228,8 @@ async def heartbeat_handler(websocket, heartbeatqueue):
             }} """.format(last_sequence_number))
         print('Heartbeat sent')
 
+
+
 async def handler(websocket, queue, heartbeatqueue):
     print('handling')
     consumer_task = asyncio.ensure_future(consumer_handler(websocket, queue, heartbeatqueue))
@@ -232,12 +239,13 @@ async def handler(websocket, queue, heartbeatqueue):
     for task in pending:
         task.cancel()
 
+
+
 async def main():
     assert len(sys.argv) > 1 # Supply the token to the bot as an argument to the script
-    #asyncio.get_event_loop().run_until_complete(connectToGateway())
     async with websockets.connect(GATEWAY_URI) as websocket:
-        queue = asyncio.Queue()
-        heartbeatqueue = asyncio.Queue()
+        queue = asyncio.Queue() # Used to let the producer know what kind of message 
+        heartbeatqueue = asyncio.Queue() # Used for heartbeat messages, the first element that is added to this queue 
         await handler(websocket, queue, heartbeatqueue)
     
 asyncio.run(main())
