@@ -129,7 +129,7 @@ async def consumer(message, queue, heartbeatqueue):
         if message_type == 'MESSAGE_CREATE':
             print ('message created by ', r["d"]["author"]) # TODO: ignore own messages
             print ('content', r["d"]["content"])
-            if re.search("bobby b|Bobby B|BOBBY B", r["d"]["content"]): # TODO: need case insensitive flag
+            if re.search("bobby b", r["d"]["content"], re.IGNORECASE):
                 #await queue.put("BOBBYAWAKENS")
                 print('yes')
                 
