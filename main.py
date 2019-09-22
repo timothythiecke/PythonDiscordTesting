@@ -65,11 +65,18 @@ quotes = [
 
 
 
-def doPostOfQuote(channelID):
+def doPostOfQuote(channelID, author):
     endpoint = """{0}/channels/{1}/messages""".format(DISCORD_BASE_URL, channelID)
+    
+    index = random.randint(0, len(quotes) - 1)
+    message = '{0}{1}'
+    if index == len(quotes) - 1:
+        message = message.format(author, quotes[index])
+    else:
+        message = message.format('', quotes[index])
     # As required by the API
     content = {
-        'content': quotes[random.randint(0, len(quotes) - 1)]
+        'content': message
     }
     # As required by the API
     headers = { 
@@ -94,21 +101,22 @@ async def consumer(message, queue, heartbeatqueue):
     if opcode == 0: # Dispatch message from gateway
         print('Dispatch received from gateway')
         if message_type == 'MESSAGE_CREATE':
-            print ('Message created by ', r["d"]["author"]) # TODO: ignore own messages, maybe not needed, as it just scans for bobby b in the content
+            author = r["d"]["author"]["username"]
+            print ('Message created by ', author) # TODO: ignore own messages, maybe not needed, as it just scans for bobby b in the content
             print ('Content: ', r["d"]["content"])
 
             channel_id = r["d"]["channel_id"]
             # Currently, the bot will scan any message for any variation of bobby b (case insensitive)
             if re.search("bobby b", r["d"]["content"], re.IGNORECASE):
                 # Note: this should be moved out of the consumer code, but the message is received on the rest endpoint
-                doPostOfQuote(channel_id)
+                doPostOfQuote(channel_id, author)
 
             # Or if it gets mentioned
             mentions = r["d"]["mentions"]
             if mentions:
                 for mention in mentions:
                     if mention["username"] == "BobbyBBot":
-                        doPostOfQuote(channel_id)
+                        doPostOfQuote(channel_id, author)
 
         if message_type == 'READY':
             print ('Bot is logged in')
