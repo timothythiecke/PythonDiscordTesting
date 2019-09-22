@@ -88,6 +88,12 @@ async def consumer(message, queue, heartbeatqueue):
                 # Note: this should be moved out of the consumer code, but the message is received on the rest endpoint
                 doPostOfQuote(r["d"]["channel_id"])
 
+            # Or if it gets mentioned
+            if r["d"]["mentions"]:
+                for mention in r["d"]["mentions"]:
+                    if mention["username"] == "BobbyBBot":
+                        doPostOfQuote(r["d"]["channel_id"])
+
         if message_type == 'READY':
             print ('Bot is logged in')
             # TODO: need to cache the sessionID somewhere, in order to be able to resume
