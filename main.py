@@ -82,17 +82,19 @@ async def consumer(message, queue, heartbeatqueue):
         if message_type == 'MESSAGE_CREATE':
             print ('Message created by ', r["d"]["author"]) # TODO: ignore own messages, maybe not needed, as it just scans for bobby b in the content
             print ('Content: ', r["d"]["content"])
-           
+
+            channel_id = r["d"]["channel_id"]
             # Currently, the bot will scan any message for any variation of bobby b (case insensitive)
             if re.search("bobby b", r["d"]["content"], re.IGNORECASE):
                 # Note: this should be moved out of the consumer code, but the message is received on the rest endpoint
-                doPostOfQuote(r["d"]["channel_id"])
+                doPostOfQuote(channel_id)
 
             # Or if it gets mentioned
-            if r["d"]["mentions"]:
-                for mention in r["d"]["mentions"]:
+            mentions = r["d"]["mentions"]
+            if mentions:
+                for mention in mentions:
                     if mention["username"] == "BobbyBBot":
-                        doPostOfQuote(r["d"]["channel_id"])
+                        doPostOfQuote(channel_id)
 
         if message_type == 'READY':
             print ('Bot is logged in')
@@ -105,7 +107,7 @@ async def consumer(message, queue, heartbeatqueue):
     if opcode == 9: # Invalid session, either resume or disconnect
         print ('Invalid session!')
     if opcode == 10 : # Hello
-        heartbeat_interval = json.loads(message)["d"]["heartbeat_interval"]
+        heartbeat_interval = r["d"]["heartbeat_interval"]
         print('Hello received with heartbeat interval', heartbeat_interval)
 
         await heartbeatqueue.put(heartbeat_interval)
