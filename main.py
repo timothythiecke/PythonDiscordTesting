@@ -51,6 +51,22 @@ quotes = [
 
 
 
+def doPostOfQuote(channelID):
+    endpoint = """{0}/channels/{1}/messages""".format(DISCORD_BASE_URL, channelID)
+    # As required by the API
+    content = {
+        'content': quotes[random.randint(0, len(quotes) - 1)]
+    }
+    # As required by the API
+    headers = { 
+        'Authorization': """Bot {0}""".format(sys.argv[1])
+    }
+    #print (endpoint, content, headers)
+    r = requests.post(endpoint, data=content, headers=headers)
+    #print(r.text)
+
+
+
 async def consumer(message, queue, heartbeatqueue):
     """
     Consumes the message received from the websocket, then evaluates
@@ -66,22 +82,12 @@ async def consumer(message, queue, heartbeatqueue):
         if message_type == 'MESSAGE_CREATE':
             print ('Message created by ', r["d"]["author"]) # TODO: ignore own messages, maybe not needed, as it just scans for bobby b in the content
             print ('Content: ', r["d"]["content"])
-            
+           
             # Currently, the bot will scan any message for any variation of bobby b (case insensitive)
             if re.search("bobby b", r["d"]["content"], re.IGNORECASE):
                 # Note: this should be moved out of the consumer code, but the message is received on the rest endpoint
-                endpoint = """{0}/channels/{1}/messages""".format(DISCORD_BASE_URL, r["d"]["channel_id"])
-                # As required by the API
-                content = {
-                    'content': quotes[random.randint(0, len(quotes) - 1)]
-                }
-                # As required by the API
-                headers = { 
-                    'Authorization': """Bot {0}""".format(sys.argv[1])
-                }
-                #print (endpoint, content, headers)
-                r = requests.post(endpoint, data=content, headers=headers)
-                #print(r.text)
+                doPostOfQuote(r["d"]["channel_id"])
+
         if message_type == 'READY':
             print ('Bot is logged in')
             # TODO: need to cache the sessionID somewhere, in order to be able to resume
