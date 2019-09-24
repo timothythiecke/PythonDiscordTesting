@@ -60,6 +60,16 @@ quotes = [
     'OUT. OUT! DAMN YOU, I\'M DONE WITH YOU',
     'GO! RUN BACK TO WINTERFELL!',
     'SO YOU DON\'T LIKE THE HAND\'S JOKE? IS THAT IT?',
+    'WE WERE AT WAR! NONE OF US KNEW IF WE WERE GONNA GO BACK HOME AGAIN!',
+    'IS THAT HOW YOU SPEAK TO YOUR KING?',
+    'HE COULD HAVE LINGERED ON THE EDGE OF THE BATTLE WITH THE SMART BOYS, AND TODAY HIS WIFE WOULD BE MAKING HIM MISERABLE, HIS SONS WOULD BE INGRATES, AND HE WOULD BE WAKING THREE TIMES IN THE NIGHT TO PISS INTO A BOWL!',
+    'YES, IT\'S BEEN A LONG TIME... BUT I STILL REMEMBER EVERY FACE!',
+    'FORCED TO MIND THE DOOR WHILE YOUR KING EATS AND DRINKS AND SHITS AND FUCKS!',
+    'STUPID BOY!',
+    'TAKE ME TO YOUR CRYPT, I WANT TO PAY MY RESPECTS!',
+    'GIVE ME SOMETHING FOR THE PAIN AND LET ME DIE!',
+    'DID YOU HAVE TO BURY HER IN A PLACE LIKE THIS?',
+    'CAREFUL, {0}! CAREFUL NOW!',
     ', GODS WHAT A STUPID NAME'
 ]
 
@@ -72,6 +82,8 @@ def doPostOfQuote(channelID, author):
     message = '{0}{1}'
     if index == len(quotes) - 1:
         message = message.format(author, quotes[index])
+    elif index == len(quotes) - 2:
+        message = quotes[index].format(author)
     else:
         message = message.format('', quotes[index])
     # As required by the API
